@@ -2645,7 +2645,6 @@ Item::APPLE => 4,Item::MUSHROOM_STEW => 6,Item::BEETROOT_SOUP => 5,Item::BREAD =
 					$this->dataPacket($pk);
 					break;
 				}
-				
 				$recipe = $this->server->getCraftingManager()->getRecipe($packet->id);
 				
 				if($recipe === null or (($recipe instanceof BigShapelessRecipe or $recipe instanceof BigShapedRecipe) and $this->craftingType === 0)){
@@ -2665,7 +2664,7 @@ Item::APPLE => 4,Item::MUSHROOM_STEW => 6,Item::BEETROOT_SOUP => 5,Item::BREAD =
 				
 				$canCraft = true;
 				
-				if($recipe instanceof ShapedRecipe){
+				if($recipe instanceof BigShapedRecipe){
 					for($x = 0; $x < 3 and $canCraft; ++$x){
 						for($y = 0; $y < 3; ++$y){
 							$item = $packet->input[$y * 3 + $x];
@@ -2673,15 +2672,28 @@ Item::APPLE => 4,Item::MUSHROOM_STEW => 6,Item::BEETROOT_SOUP => 5,Item::BREAD =
 							if($item->getCount() > 0){
 								if($ingredient === null or !$ingredient->deepEquals($item, $ingredient->getDamage() !== null, $ingredient->getCompoundTag() !== null)){
 									$canCraft = false;
-									break;
+                                                                        break;
 								}
 							}
 						}
 					}
 				}
+                                elseif($recipe instanceof ShapedRecipe){
+					for($x = 0; $x < 2 and $canCraft; ++$x){
+						for($y = 0; $y < 2; ++$y){
+							$item = $packet->input[$y * 2 + $x];
+							$ingredient = $recipe->getIngredient($x, $y);
+							if($item->getCount() > 0){
+								if($ingredient === null or !$ingredient->deepEquals($item, $ingredient->getDamage() !== null, $ingredient->getCompoundTag() !== null)){
+									$canCraft = false;
+                                                                        break;
+								}
+							}
+						}
+					} 
+                                }
 				elseif($recipe instanceof ShapelessRecipe){
 					$needed = $recipe->getIngredientList();
-					
 					for($x = 0; $x < 3 and $canCraft; ++$x){
 						for($y = 0; $y < 3; ++$y){
 							$item = clone $packet->input[$y * 3 + $x];
@@ -2728,7 +2740,7 @@ Item::APPLE => 4,Item::MUSHROOM_STEW => 6,Item::BEETROOT_SOUP => 5,Item::BREAD =
 				foreach($ingredients as $ingredient){
 					$slot = -1;
 					foreach($this->inventory->getContents() as $index => $i){
-						if($ingredient->getId() !== 0 and $ingredient->deepEquals($i, $i->getDamage() !== null) and ($i->getCount() - $used[$index]) >= 1){
+                                            if($ingredient->getId() !== 0 and $ingredient->deepEquals($i, $i->getDamage() !== null) and ($i->getCount() - $used[$index]) >= 1){
 							$slot = $index;
 							$used[$index]++;
 							break;
