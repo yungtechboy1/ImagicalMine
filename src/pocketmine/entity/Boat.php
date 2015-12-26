@@ -3,14 +3,51 @@
 namespace pocketmine\entity;
 
 use pocketmine\network\protocol\AddEntityPacket;
-use pocketmine\event\entity\EntityDeathEvent;
 use pocketmine\Player;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\network\protocol\EntityEventPacket;
-use pocketmine\item\Item as ItemItem;
+use pocketmine\item\Item;
+use pocketmine\event\entity\EntityDamageByEntityEvent;
 
-class Boat extends Entity{
+class Boat extends WaterAnimal implements Rideable,Damageable{
 	const NETWORK_ID = 90;
+	
+	public $width = 0.95;
+	public $length = 0.95;
+	public $height = 0.455;
+	
+	public function initEntity(){
+		$this->setMaxHealth(4);
+		parent::initEntity();
+	}
+
+	public function getName(){
+		return "Boat";
+	}
+
+	public function attack($damage, EntityDamageEvent $source){
+		parent::attack($damage, $source);
+		if($source->isCancelled()){
+			return;
+		}
+		
+		if($source instanceof EntityDamageByEntityEvent && $this->getHealth() > 0){
+			$pk = new EntityEventPacket();
+			$pk->eid = $this->getId();
+			$pk->event = EntityEventPacket::HURT_ANIMATION;
+			Server::broadcastPacket($this->hasSpawned, $pk);
+		}
+		elseif($source instanceof EntityDamageByEntityEvent && $this->getHealth() <= 0){
+			$this->kill();
+		}
+		else{
+			$this->kill();
+		}
+	}
+	
+	public function onUpdate($currentTick){
+		return false;
+	}
 
 	public function spawnTo(Player $player){
 		$pk = new AddEntityPacket();
@@ -30,35 +67,9 @@ class Boat extends Entity{
 		parent::spawnTo($player);
 	}
 
-	public function attack($damage, EntityDamageEvent $source){
-		parent::attack($damage, $source);
-
-		if(!$source->isCancelled()){
-			$pk = new EntityEventPacket();
-			$pk->eid = $this->id;
-			$pk->event = EntityEventPacket::HURT_ANIMATION;
-			foreach($this->getLevel()->getPlayers() as $player){
-				$player->dataPacket($pk);
-			}
-		}
-	}
-
-	public function kill(){
-		parent::kill();
-
-		foreach($this->getDrops() as $item){
-			$this->getLevel()->dropItem($this, $item);
-		}
-	}
-
 	public function getDrops(){
 		return [
-			ItemItem::get(333, 0, 1)
+			Item::get(Item::BOAT, $this->BoatType, 1)
 		];
-	}
-
-	public function getSaveId(){
-		$class = new \ReflectionClass(static::class);
-		return $class->getShortName();
 	}
 }

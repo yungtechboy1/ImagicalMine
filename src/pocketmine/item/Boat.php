@@ -25,6 +25,7 @@
 */
 
 namespace pocketmine\item;
+
 use pocketmine\level\Level;
 use pocketmine\block\Block;
 use pocketmine\Player;
@@ -32,7 +33,10 @@ use pocketmine\nbt\tag\Compound;
 use pocketmine\nbt\tag\Enum;
 use pocketmine\nbt\tag\Double;
 use pocketmine\nbt\tag\Float;
+use pocketmine\nbt\tag\String;
 use pocketmine\entity\Boat as BoatEntity;
+use pocketmine\level\format\FullChunk;
+use pocketmine\entity\Entity;
 
 class Boat extends Item{
 	public function __construct($meta = 0, $count = 1){
@@ -54,14 +58,20 @@ class Boat extends Item{
 		return 1;
 	}
 	
-	/*public function canBeActivated(){
+	public function canBeActivated(){
 		return true;
 	}
 
 	public function onActivate(Level $level, Player $player, Block $block, Block $target, $face, $fx, $fy, $fz){
+		$entity = null;
 		$realPos = $block->getSide($face);
+		$chunk = $level->getChunk($realPos->getX() >> 4, $realPos->getZ() >> 4);
+		
+		if(!($chunk instanceof FullChunk)){
+			return false;
+		}
 
-		$boat = new Boat($player->getLevel()->getChunk($realPos->getX() >> 4, $realPos->getZ() >> 4), new Compound("", [
+		$nbt = new Compound("", [
 			"Pos" => new Enum("Pos", [
 				new Double("", $realPos->getX()),
 				new Double("", $realPos->getY()),
@@ -73,24 +83,22 @@ class Boat extends Item{
 				new Double("", 0)
 			]),
 			"Rotation" => new Enum("Rotation", [
-				new Float("", 0),
+				new Float("", lcg_value() * 360),
 				new Float("", 0)
 			]),
-		]));
-		$boat->spawnToAll();
-
-		if($player->isSurvival()) {
-			$item = $player->getInventory()->getItemInHand();
-			$count = $item->getCount();
-			if(--$count <= 0){
-				$player->getInventory()->setItemInHand(Item::get(Item::AIR));
-				return;
+			"BoatType" => new String("BoatType", $this->meta),
+		]);
+		
+		$entity = Entity::createEntity(BoatEntity::NETWORK_ID, $chunk, $nbt);
+		
+		if($entity instanceof Entity){
+			if($player->isSurvival()){
+				--$this->count;
 			}
-
-			$item->setCount($count);
-			$player->getInventory()->setItemInHand($item);
+			$entity->spawnToAll();
+			return true;
 		}
 		
-		return true;
-	}*/
+		return false;
+	}
 }
