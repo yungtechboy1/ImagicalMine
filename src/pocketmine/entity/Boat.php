@@ -31,7 +31,7 @@ class Boat extends WaterAnimal implements Rideable,Damageable{
 			return;
 		}
 		
-		if($source instanceof EntityDamageByEntityEvent && $this->getHealth() > 0){
+		/*if($source instanceof EntityDamageByEntityEvent && $this->getHealth() > 0){
 			$pk = new EntityEventPacket();
 			$pk->eid = $this->getId();
 			$pk->event = EntityEventPacket::HURT_ANIMATION;
@@ -41,6 +41,10 @@ class Boat extends WaterAnimal implements Rideable,Damageable{
 			$this->kill();
 		}
 		else{
+			$this->kill();
+		}*/
+		$this->setHealth($this->getHealth() - $damage);
+		if($this->getHealth()<=0){
 			$this->kill();
 		}
 	}
